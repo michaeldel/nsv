@@ -5,7 +5,7 @@
 
 #include <SDL2/SDL.h>
 
-#define INITIAL_WIDTH 640
+#define INITIAL_WIDTH 1280
 #define INITIAL_HEIGHT 320
 
 int main(void) {
@@ -34,8 +34,8 @@ int main(void) {
         return EXIT_FAILURE; /* TODO: UNIX exit codes */
     }
 
-    const unsigned int width = INITIAL_WIDTH;
-    const unsigned int height = INITIAL_HEIGHT;
+    const unsigned int width = 256;
+    const unsigned int height = 64;
     const Uint32 pixelformat = SDL_PIXELFORMAT_RGB888;
 
     assert(width <= INT_MAX);
@@ -69,14 +69,20 @@ int main(void) {
 
     for (size_t y = 0; y < height; y++) 
         for (size_t x = 0; x < width; x++) {
-            const Uint8 r = x % 256;
-            const Uint8 g = y % 256;
-            const Uint8 b = 0;
+            const unsigned long long num = (x + (1 << 20)) * (x + (1 << 20));
+            const unsigned int ison = (num >> (height - y - 1)) & 0x1 ? 1 : 0;
+
+            const Uint8 r = ison * 255;
+            const Uint8 g = ison * 255;
+            const Uint8 b = ison * 255;
 
             pixels[y * width + x] = SDL_MapRGB(format, r, g, b);
         }
 
     SDL_UnlockTexture(texture);
+
+    const unsigned int winwidth = INITIAL_WIDTH;
+    const unsigned int winheight = INITIAL_HEIGHT;
 
     for (;;) {
         SDL_Event event;
@@ -86,7 +92,8 @@ int main(void) {
         if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_q) break;
 
         SDL_RenderClear(renderer);
-        SDL_RenderCopy(renderer, texture, NULL, NULL);
+        SDL_Rect dest = { 0, 0, winwidth, winheight };
+        SDL_RenderCopy(renderer, texture, NULL, &dest);
         SDL_RenderPresent(renderer);
     }
 
