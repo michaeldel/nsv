@@ -8,6 +8,9 @@
 #define INITIAL_WIDTH 1280
 #define INITIAL_HEIGHT 320
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
 int main(void) {
     int err = SDL_Init(SDL_INIT_VIDEO);
     if (err) {
@@ -34,7 +37,7 @@ int main(void) {
         return EXIT_FAILURE; /* TODO: UNIX exit codes */
     }
 
-    const unsigned int width = 256;
+    const unsigned int width = 1024;
     const unsigned int height = 64;
     const Uint32 pixelformat = SDL_PIXELFORMAT_RGB888;
 
@@ -83,6 +86,8 @@ int main(void) {
 
     const unsigned int winwidth = INITIAL_WIDTH;
     const unsigned int winheight = INITIAL_HEIGHT;
+    
+    int offset = 0;
 
     for (;;) {
         SDL_Event event;
@@ -91,9 +96,18 @@ int main(void) {
         if (event.type == SDL_QUIT) break;
         if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_q) break;
 
+        /* TODO: check limits correctly */
+        if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_h)
+            offset = MAX(0, offset - 1);
+
+        /* TODO: check limits correctly */
+        if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_l)
+            offset = MIN((int) (winwidth - width), offset + 1);
+
         SDL_RenderClear(renderer);
+        SDL_Rect src = { offset, 0, winwidth / 4, height };
         SDL_Rect dest = { 0, 0, winwidth, winheight };
-        SDL_RenderCopy(renderer, texture, NULL, &dest);
+        SDL_RenderCopy(renderer, texture, &src, &dest);
         SDL_RenderPresent(renderer);
     }
 
