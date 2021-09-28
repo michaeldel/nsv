@@ -1,3 +1,5 @@
+#include <assert.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -32,16 +34,19 @@ int main(void) {
         return EXIT_FAILURE; /* TODO: UNIX exit codes */
     }
 
-    const int width = INITIAL_WIDTH;
-    const int height = INITIAL_HEIGHT;
-    const Uint32 pixelformat = SDL_PIXELFORMAT_RGBA8888;
+    const unsigned int width = INITIAL_WIDTH;
+    const unsigned int height = INITIAL_HEIGHT;
+    const Uint32 pixelformat = SDL_PIXELFORMAT_RGB888;
+
+    assert(width <= INT_MAX);
+    assert(height <= INT_MAX);
 
     SDL_Texture * texture = SDL_CreateTexture(
         renderer,
         pixelformat,
         SDL_TEXTUREACCESS_STREAMING,
-        width,
-        height
+        (int) width,
+        (int) height
     );
 
     if (texture == NULL) {
@@ -56,6 +61,23 @@ int main(void) {
         return EXIT_FAILURE; /* TODO: UNIX exit codes */
     }
 
+    int pitch = width * 3;
+    void * tmp;
+
+    SDL_LockTexture(texture, NULL, &tmp, &pitch);
+    Uint32 * pixels = tmp;
+
+    for (size_t y = 0; y < height; y++) 
+        for (size_t x = 0; x < width; x++) {
+            const Uint8 r = x % 256;
+            const Uint8 g = y % 256;
+            const Uint8 b = 0;
+
+            pixels[y * width + x] = SDL_MapRGB(format, r, g, b);
+        }
+
+    SDL_UnlockTexture(texture);
+
     for (;;) {
         SDL_Event event;
         SDL_WaitEvent(&event);
@@ -64,6 +86,7 @@ int main(void) {
         if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_q) break;
 
         SDL_RenderClear(renderer);
+        SDL_RenderCopy(renderer, texture, NULL, NULL);
         SDL_RenderPresent(renderer);
     }
 
