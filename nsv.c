@@ -58,9 +58,10 @@ int main(void) {
 
     for (;;) {
         SDL_Event event;
-        SDL_PollEvent(&event);
+        SDL_WaitEvent(&event);
 
         if (event.type == SDL_QUIT) break;
+        if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_q) break;
 
         SDL_RenderClear(renderer);
         SDL_RenderPresent(renderer);
