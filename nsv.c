@@ -45,10 +45,6 @@ int main(void) {
     int sequence[MAX_SEQ_LEN]; /* TODO: longer sequences */
     const size_t sequencelen = readsequence(sequence);
 
-    for (size_t i = 0; i < sequencelen; i++)
-        printf("%d ", sequence[i]);
-    putchar('\n');
-
     int err = SDL_Init(SDL_INIT_VIDEO);
     if (err) {
         fprintf(stderr, "Unable to initialize SDL: %s\n", SDL_GetError());
