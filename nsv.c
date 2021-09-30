@@ -25,6 +25,22 @@ size_t readsequence(int * sequence) {
     return len;
 }
 
+int seqmax(const int * sequence, size_t len) {
+    assert(len > 0);
+
+    int result = sequence[0];
+
+    for (size_t i = 1; i < len; i++)
+        result = MAX(result, sequence[i]);
+
+    return result;
+}
+
+struct viewports {
+    SDL_Rect main;
+    SDL_Rect minimap;
+};
+
 int main(void) {
     int sequence[MAX_SEQ_LEN]; /* TODO: longer sequences */
     const size_t sequencelen = readsequence(sequence);
@@ -108,7 +124,43 @@ int main(void) {
     const unsigned int winwidth = INITIAL_WIDTH;
     const unsigned int winheight = INITIAL_HEIGHT;
     
-    int offset = 0;
+    const unsigned int minimapwidth = sequencelen;
+    const unsigned int minimapheight = 160;
+
+    SDL_Texture * minimap = SDL_CreateTexture(
+        renderer,
+        pixelformat,
+        SDL_TEXTUREACCESS_TARGET,
+        (int) minimapwidth,
+        (int) minimapheight
+    );
+
+    SDL_SetRenderTarget(renderer, minimap);
+    SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+
+    const int ceil = seqmax(sequence, sequencelen);
+
+    for (size_t x = 0; x < minimapwidth; x++) {
+        const int lineheight = sequence[x] * minimapheight / ceil;
+        if (lineheight == 0) continue;
+
+        const int y1 = minimapheight - 1;
+        const int y2 = minimapheight - 1 - lineheight;
+
+        SDL_RenderDrawLine(renderer, x, y1, x, y2);
+    }
+
+    SDL_SetRenderTarget(renderer, NULL);
+
+    const struct viewports viewports = {
+        .main =    { 0, 0, winwidth, winheight - 64 },
+        .minimap = { 0, winheight - 64 + 1, winwidth, 64 },
+    };
+
+    const unsigned int zoom = 32;
+
+    int xoffset = 0;
+    int yoffset = 0;
 
     for (;;) {
         SDL_Event event;
@@ -119,22 +171,36 @@ int main(void) {
 
         /* TODO: check limits correctly */
         if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_h)
-            offset = MAX(0, offset - 1);
+            xoffset = MAX(0, xoffset - 1);
 
         /* TODO: check limits correctly */
         if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_l)
-            offset = MIN((int) (winwidth - width), offset + 1);
+            xoffset = MIN((int) (winwidth - width), xoffset + 1);
 
+        /* TODO: check limits correctly */
+        if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_j)
+            yoffset = MAX(0, yoffset - 1);
+
+        /* TODO: check limits correctly */
+        if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_k)
+            yoffset = MIN(64, yoffset + 1); /* TODO: bignum, other bases, etc */
+
+        /* TODO: can be optimized by redrawing only on relevant event */
         SDL_RenderClear(renderer);
-        SDL_Rect src = { offset, 0, winwidth / 4, height };
-        SDL_Rect dest = { 0, 0, winwidth, winheight };
-        SDL_RenderCopy(renderer, texture, &src, &dest);
+        SDL_Rect src = {
+            xoffset,
+            64 - yoffset - viewports.main.h / zoom,/* TODO: bignum, other bases, etc */
+            viewports.main.w / zoom, viewports.main.h / zoom
+        };
+        SDL_RenderCopy(renderer, texture, &src, &viewports.main);
+        SDL_RenderCopy(renderer, minimap, NULL, &viewports.minimap);
         SDL_RenderPresent(renderer);
     }
 
     SDL_FreeFormat(format);
 
     SDL_DestroyTexture(texture);
+    SDL_DestroyTexture(minimap);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
 
