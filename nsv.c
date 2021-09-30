@@ -153,7 +153,7 @@ int main(void) {
         .minimap = { 0, winheight - 64 + 1, winwidth, 64 },
     };
 
-    const unsigned int zoom = 32;
+    unsigned int zoom = 4;
 
     int xoffset = 0;
     int yoffset = 0;
@@ -180,6 +180,11 @@ int main(void) {
         /* TODO: check limits correctly */
         if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_k)
             yoffset = MIN(64, yoffset + 1); /* TODO: bignum, other bases, etc */
+
+        if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_MINUS)
+            zoom = MAX(1, zoom - 1);
+        if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_EQUALS)
+            zoom = MIN(viewports.main.h, (int) (zoom + 1));
 
         /* TODO: can be optimized by redrawing only on relevant event */
         SDL_RenderClear(renderer);
