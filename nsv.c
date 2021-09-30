@@ -8,10 +8,31 @@
 #define INITIAL_WIDTH 1280
 #define INITIAL_HEIGHT 320
 
+#define MAX_SEQ_LEN 10000
+
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
+size_t readsequence(int * sequence) {
+    size_t len = 0;
+    int input;
+
+    while (scanf("%d", &input) > 0)
+        sequence[len++] = input;
+
+    assert(len <= MAX_SEQ_LEN);
+
+    return len;
+}
+
 int main(void) {
+    int sequence[MAX_SEQ_LEN]; /* TODO: longer sequences */
+    const size_t sequencelen = readsequence(sequence);
+
+    for (size_t i = 0; i < sequencelen; i++)
+        printf("%d ", sequence[i]);
+    putchar('\n');
+
     int err = SDL_Init(SDL_INIT_VIDEO);
     if (err) {
         fprintf(stderr, "Unable to initialize SDL: %s\n", SDL_GetError());
@@ -72,7 +93,7 @@ int main(void) {
 
     for (size_t y = 0; y < height; y++) 
         for (size_t x = 0; x < width; x++) {
-            const unsigned long long num = (x + (1 << 20)) * (x + (1 << 20));
+            const unsigned long long num = (unsigned long long) sequence[x];
             const unsigned int ison = (num >> (height - y - 1)) & 0x1 ? 1 : 0;
 
             const Uint8 r = ison * 255;
