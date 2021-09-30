@@ -202,6 +202,21 @@ int main(void) {
         };
         SDL_RenderCopy(renderer, texture, &src, &dest);
         SDL_RenderCopy(renderer, minimap, NULL, &viewports.minimap);
+
+        const SDL_Rect minimaplocation = {
+            viewports.minimap.x + xoffset * viewports.minimap.w / sequencelen,
+            viewports.minimap.y,
+            src.w,
+            viewports.minimap.h,
+        };
+        SDL_SetRenderDrawColor(
+            renderer, 0xFF, 0xFF, 0xFF, (SDL_ALPHA_OPAQUE + SDL_ALPHA_TRANSPARENT) / 2
+        );
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+        SDL_RenderFillRect(renderer, &minimaplocation);
+
+        SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, SDL_ALPHA_OPAQUE);
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
         SDL_RenderPresent(renderer);
     }
 
