@@ -189,12 +189,18 @@ int main(void) {
 
         /* TODO: can be optimized by redrawing only on relevant event */
         SDL_RenderClear(renderer);
-        SDL_Rect src = {
+        const SDL_Rect src = {
             xoffset,
-            64 - yoffset - viewports.main.h / zoom,/* TODO: bignum, other bases, etc */
+            64 - yoffset - viewports.main.h / zoom, /* TODO: bignum, other bases, etc */
             viewports.main.w / zoom, viewports.main.h / zoom
         };
-        SDL_RenderCopy(renderer, texture, &src, &viewports.main);
+        const SDL_Rect dest = { /* TODO: bignum, other bases, etc */
+            viewports.main.x,
+            src.h > 64 ? viewports.main.h - (int) zoom * 64 : viewports.main.y,
+            viewports.main.w,
+            src.h > 64 ? (int) zoom * 64 : viewports.main.h
+        };
+        SDL_RenderCopy(renderer, texture, &src, &dest);
         SDL_RenderCopy(renderer, minimap, NULL, &viewports.minimap);
         SDL_RenderPresent(renderer);
     }
