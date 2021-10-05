@@ -239,7 +239,7 @@ int main(void) {
             viewports.minimap.h,
         };
         SDL_SetRenderDrawColor(
-            renderer, 0xFF, 0xFF, 0xFF, (SDL_ALPHA_OPAQUE + SDL_ALPHA_TRANSPARENT) / 2
+            renderer, 0xFF, 0xFF, 0xFF, (SDL_ALPHA_OPAQUE + SDL_ALPHA_TRANSPARENT) / 4
         );
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
         SDL_RenderFillRect(renderer, &minimaplocation);
