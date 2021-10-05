@@ -235,7 +235,7 @@ int main(void) {
         const SDL_Rect minimaplocation = {
             viewports.minimap.x + xoffset * viewports.minimap.w / sequencelen,
             viewports.minimap.y,
-            src.w,
+            viewports.minimap.w * src.w / sequencelen,
             viewports.minimap.h,
         };
         SDL_SetRenderDrawColor(
