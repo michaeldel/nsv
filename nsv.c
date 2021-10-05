@@ -7,7 +7,7 @@
 #include <SDL2/SDL.h>
 
 #define INITIAL_WIDTH 1280
-#define INITIAL_HEIGHT 320
+#define INITIAL_HEIGHT 720
 
 #define MAX_SEQ_LEN 10000
 
@@ -184,7 +184,7 @@ int main(void) {
     struct viewports viewports;
     updateviewports(&viewports, winwidth, winheight);
 
-    unsigned int zoom = 4;
+    unsigned int zoom = 1;
 
     int xoffset = 0;
     int yoffset = 0;
