@@ -55,6 +55,11 @@ struct viewports {
     SDL_Rect minimap;
 };
 
+void updateviewports(struct viewports * viewports, int winwidth, int winheight) {
+    viewports->main =    (SDL_Rect) { 0, 0, winwidth, winheight - 64 };
+    viewports->minimap = (SDL_Rect) { 0, winheight - 64 + 1, winwidth, 64 };
+}
+
 int main(void) {
     mpz_t sequence[MAX_SEQ_LEN]; /* TODO: longer sequences */
     const size_t sequencelen = readsequence(sequence);
@@ -69,7 +74,7 @@ int main(void) {
         "nsv",
         SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
         INITIAL_WIDTH, INITIAL_HEIGHT,
-        SDL_WINDOW_OPENGL
+        SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL
     );
 
     if (window == NULL) {
@@ -133,8 +138,10 @@ int main(void) {
 
     SDL_UnlockTexture(texture);
 
-    const unsigned int winwidth = INITIAL_WIDTH;
-    const unsigned int winheight = INITIAL_HEIGHT;
+    int winwidth;
+    int winheight;
+
+    SDL_GetWindowSize(window, &winwidth, &winheight);
     
     const unsigned int minimapwidth = sequencelen;
     const unsigned int minimapheight = 160;
@@ -174,10 +181,8 @@ int main(void) {
     SDL_SetRenderTarget(renderer, NULL);
     SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0x00);
 
-    const struct viewports viewports = {
-        .main =    { 0, 0, winwidth, winheight - 64 },
-        .minimap = { 0, winheight - 64 + 1, winwidth, 64 },
-    };
+    struct viewports viewports;
+    updateviewports(&viewports, winwidth, winheight);
 
     unsigned int zoom = 4;
 
@@ -207,6 +212,10 @@ int main(void) {
             zoom = MIN(viewports.main.h, (int) (zoom + 1));
 
         /* TODO: can be optimized by redrawing only on relevant event */
+        SDL_GetWindowSize(window, &winwidth, &winheight);
+        struct viewports viewports;
+        updateviewports(&viewports, winwidth, winheight);
+
         SDL_RenderClear(renderer);
         const SDL_Rect src = {
             MAX(0, xoffset), /* TODO: account for zoom */
