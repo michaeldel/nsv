@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <gmp.h>
 #include <SDL2/SDL.h>
 
 #define INITIAL_WIDTH 1280
@@ -13,25 +14,38 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
-size_t readsequence(int * sequence) {
+size_t readsequence(mpz_t * sequence) {
     size_t len = 0;
-    int input;
 
-    while (scanf("%d", &input) > 0)
-        sequence[len++] = input;
+    mpz_t num;
+    mpz_init(num);
+
+    char buffer[BUFSIZ];
+    char format[256];
+    sprintf(format, "%%%ds", BUFSIZ - 1);
+
+    while (scanf(format, buffer) > 0) {
+
+        mpz_set_str(num, buffer, 10);
+        mpz_init_set(sequence[len], num);
+        len++;
+    }
 
     assert(len <= MAX_SEQ_LEN);
+
+    mpz_clear(num);
 
     return len;
 }
 
-int seqmax(const int * sequence, size_t len) {
+size_t seqmaxbitsize(mpz_t * sequence, size_t len) {
     assert(len > 0);
 
-    int result = sequence[0];
+    size_t result = 0;
+    const int base = 2;
 
-    for (size_t i = 1; i < len; i++)
-        result = MAX(result, sequence[i]);
+    for (size_t i = 0; i < len; i++)
+        result = MAX(result, mpz_sizeinbase(sequence[i], base));
 
     return result;
 }
@@ -42,7 +56,7 @@ struct viewports {
 };
 
 int main(void) {
-    int sequence[MAX_SEQ_LEN]; /* TODO: longer sequences */
+    mpz_t sequence[MAX_SEQ_LEN]; /* TODO: longer sequences */
     const size_t sequencelen = readsequence(sequence);
 
     int err = SDL_Init(SDL_INIT_VIDEO);
@@ -70,8 +84,8 @@ int main(void) {
         return EXIT_FAILURE; /* TODO: UNIX exit codes */
     }
 
-    const unsigned int width = 1024;
-    const unsigned int height = 64;
+    const unsigned int width = MAX(1024, sequencelen);
+    const unsigned int height = MAX(64, seqmaxbitsize(sequence, sequencelen));
     const Uint32 pixelformat = SDL_PIXELFORMAT_RGB888;
 
     assert(width <= INT_MAX);
@@ -105,8 +119,10 @@ int main(void) {
 
     for (size_t y = 0; y < height; y++) 
         for (size_t x = 0; x < width; x++) {
-            const unsigned long long num = (unsigned long long) sequence[x];
-            const unsigned int ison = (num >> (height - y - 1)) & 0x1 ? 1 : 0;
+            mpz_t num;
+            mpz_init_set(num, sequence[x]);
+            const mp_bitcnt_t bitindex = height - y - 1;
+            const unsigned int ison = mpz_tstbit(num, bitindex);
 
             const Uint8 r = ison * 255;
             const Uint8 g = ison * 255;
@@ -134,16 +150,25 @@ int main(void) {
     SDL_SetRenderTarget(renderer, minimap);
     SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
 
-    const int ceil = seqmax(sequence, sequencelen);
+    const unsigned int ceilbits = seqmaxbitsize(sequence, sequencelen);
 
     for (size_t x = 0; x < minimapwidth; x++) {
-        const int lineheight = sequence[x] * minimapheight / ceil;
+        mpz_t tmp;
+        mpz_init(tmp);
+        mpz_mul_ui(tmp, sequence[x], minimapheight);
+        mpz_fdiv_q_2exp(tmp, tmp, ceilbits);
+
+        assert(mpz_fits_sint_p(tmp));
+
+        const int lineheight = mpz_get_si(tmp);
         if (lineheight == 0) continue;
 
         const int y1 = minimapheight - 1;
         const int y2 = minimapheight - 1 - lineheight;
 
         SDL_RenderDrawLine(renderer, x, y1, x, y2);
+
+        mpz_clear(tmp);
     }
 
     SDL_SetRenderTarget(renderer, NULL);
@@ -166,21 +191,15 @@ int main(void) {
         if (event.type == SDL_QUIT) break;
         if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_q) break;
 
-        /* TODO: check limits correctly */
         if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_h)
             xoffset = MAX(0, xoffset - 1);
-
-        /* TODO: check limits correctly */
         if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_l)
-            xoffset = MIN((int) (winwidth - width), xoffset + 1);
+            xoffset = MIN((int) width - 1, xoffset + 1); /* TODO: account for zoom */
 
-        /* TODO: check limits correctly */
         if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_j)
             yoffset = MAX(0, yoffset - 1);
-
-        /* TODO: check limits correctly */
         if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_k)
-            yoffset = MIN(64, yoffset + 1); /* TODO: bignum, other bases, etc */
+            yoffset = MIN((int) height - 1, yoffset + 1); /* TODO: account for zoom */
 
         if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_MINUS)
             zoom = MAX(1, zoom - 1);
@@ -190,15 +209,16 @@ int main(void) {
         /* TODO: can be optimized by redrawing only on relevant event */
         SDL_RenderClear(renderer);
         const SDL_Rect src = {
-            xoffset,
-            64 - yoffset - viewports.main.h / zoom, /* TODO: bignum, other bases, etc */
-            viewports.main.w / zoom, viewports.main.h / zoom
+            MAX(0, xoffset), /* TODO: account for zoom */
+            MAX(0, (int) (height - viewports.main.h / zoom - yoffset)),
+            MIN(width, viewports.main.w / zoom),
+            MIN(height, viewports.main.h / zoom)
         };
-        const SDL_Rect dest = { /* TODO: bignum, other bases, etc */
+        const SDL_Rect dest = {
             viewports.main.x,
-            src.h > 64 ? viewports.main.h - (int) zoom * 64 : viewports.main.y,
-            viewports.main.w,
-            src.h > 64 ? (int) zoom * 64 : viewports.main.h
+            viewports.main.y + MAX(0, (int) (viewports.main.h - src.h * zoom)),
+            src.w * zoom,
+            src.h * zoom,
         };
         SDL_RenderCopy(renderer, texture, &src, &dest);
         SDL_RenderCopy(renderer, minimap, NULL, &viewports.minimap);
@@ -228,6 +248,9 @@ int main(void) {
     SDL_DestroyWindow(window);
 
     SDL_Quit();
+
+    for (size_t i = 0; i < sequencelen; i++)
+        mpz_clear(sequence[i]);
 
     return EXIT_SUCCESS;
 }
