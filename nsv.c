@@ -189,6 +189,8 @@ int main(void) {
     int xoffset = 0;
     int yoffset = 0;
 
+    char textinput[BUFSIZ] = { 0 };
+
     for (;;) {
         SDL_Event event;
         SDL_WaitEvent(&event);
@@ -210,6 +212,23 @@ int main(void) {
             zoom = MAX(1, zoom - 1);
         if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_EQUALS)
             zoom = MIN(viewports.main.h, (int) (zoom + 1));
+
+        if (event.type == SDL_TEXTINPUT)
+            strcat(textinput, event.text.text); /* TODO: bounds check */
+
+        const size_t textinputlen = strlen(textinput);
+
+        if (textinput[textinputlen - 1] == 'G') {
+            textinput[0] = '\0';
+            xoffset = width - 1;
+        }
+        if (textinput[textinputlen - 1] == 'g' && textinput[textinputlen - 2] == 'g') {
+            textinput[0] = '\0';
+            xoffset = 0;
+        }
+        /* TODO: better size handling than this nasty hack */
+        textinput[0] = textinput[textinputlen - 1];
+        textinput[1] = '\0';
 
         /* TODO: can be optimized by redrawing only on relevant event */
         SDL_GetWindowSize(window, &winwidth, &winheight);
