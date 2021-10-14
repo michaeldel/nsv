@@ -6,46 +6,22 @@
 #include <gmp.h>
 #include <SDL2/SDL.h>
 
+#include "sequence.h"
+
 #define INITIAL_WIDTH 1280
 #define INITIAL_HEIGHT 720
-
-#define MAX_SEQ_LEN 10000
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
-size_t readsequence(mpz_t * sequence) {
-    size_t len = 0;
-
-    mpz_t num;
-    mpz_init(num);
-
-    char buffer[BUFSIZ];
-    char format[256];
-    sprintf(format, "%%%ds", BUFSIZ - 1);
-
-    while (scanf(format, buffer) > 0) {
-
-        mpz_set_str(num, buffer, 10);
-        mpz_init_set(sequence[len], num);
-        len++;
-    }
-
-    assert(len <= MAX_SEQ_LEN);
-
-    mpz_clear(num);
-
-    return len;
-}
-
-size_t seqmaxbitsize(mpz_t * sequence, size_t len) {
+size_t maxbitsize(mpz_t * numbers, size_t len) {
     assert(len > 0);
 
     size_t result = 0;
     const int base = 2;
 
     for (size_t i = 0; i < len; i++)
-        result = MAX(result, mpz_sizeinbase(sequence[i], base));
+        result = MAX(result, mpz_sizeinbase(numbers[i], base));
 
     return result;
 }
@@ -61,8 +37,7 @@ void updateviewports(struct viewports * viewports, int winwidth, int winheight) 
 }
 
 int main(void) {
-    mpz_t sequence[MAX_SEQ_LEN]; /* TODO: longer sequences */
-    const size_t sequencelen = readsequence(sequence);
+    struct sequence * sequence = readsequencefromstdin();
 
     int err = SDL_Init(SDL_INIT_VIDEO);
     if (err) {
@@ -89,8 +64,8 @@ int main(void) {
         return EXIT_FAILURE; /* TODO: UNIX exit codes */
     }
 
-    const unsigned int width = MAX(1024, sequencelen);
-    const unsigned int height = MAX(64, seqmaxbitsize(sequence, sequencelen));
+    const unsigned int width = MAX(1024, sequence->len);
+    const unsigned int height = MAX(64, maxbitsize(sequence->numbers, sequence->len));
     const Uint32 pixelformat = SDL_PIXELFORMAT_RGB888;
 
     assert(width <= INT_MAX);
@@ -125,7 +100,7 @@ int main(void) {
     for (size_t y = 0; y < height; y++) 
         for (size_t x = 0; x < width; x++) {
             mpz_t num;
-            mpz_init_set(num, sequence[x]);
+            mpz_init_set(num, sequence->numbers[x]);
             const mp_bitcnt_t bitindex = height - y - 1;
             const unsigned int ison = mpz_tstbit(num, bitindex);
 
@@ -143,7 +118,7 @@ int main(void) {
 
     SDL_GetWindowSize(window, &winwidth, &winheight);
     
-    const unsigned int minimapwidth = sequencelen;
+    const unsigned int minimapwidth = sequence->len;
     const unsigned int minimapheight = 160;
 
     SDL_Texture * minimap = SDL_CreateTexture(
@@ -157,12 +132,12 @@ int main(void) {
     SDL_SetRenderTarget(renderer, minimap);
     SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
 
-    const unsigned int ceilbits = seqmaxbitsize(sequence, sequencelen);
+    const unsigned int ceilbits = maxbitsize(sequence->numbers, sequence->len);
 
     for (size_t x = 0; x < minimapwidth; x++) {
         mpz_t tmp;
         mpz_init(tmp);
-        mpz_mul_ui(tmp, sequence[x], minimapheight);
+        mpz_mul_ui(tmp, sequence->numbers[x], minimapheight);
         mpz_fdiv_q_2exp(tmp, tmp, ceilbits);
 
         assert(mpz_fits_sint_p(tmp));
@@ -252,9 +227,9 @@ int main(void) {
         SDL_RenderCopy(renderer, minimap, NULL, &viewports.minimap);
 
         const SDL_Rect minimaplocation = {
-            viewports.minimap.x + xoffset * viewports.minimap.w / sequencelen,
+            viewports.minimap.x + xoffset * viewports.minimap.w / sequence->len,
             viewports.minimap.y,
-            viewports.minimap.w * src.w / sequencelen,
+            viewports.minimap.w * src.w / sequence->len,
             viewports.minimap.h,
         };
         SDL_SetRenderDrawColor(
@@ -277,8 +252,7 @@ int main(void) {
 
     SDL_Quit();
 
-    for (size_t i = 0; i < sequencelen; i++)
-        mpz_clear(sequence[i]);
+    delsequence(sequence);
 
     return EXIT_SUCCESS;
 }
