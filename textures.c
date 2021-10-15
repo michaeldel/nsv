@@ -21,7 +21,7 @@ void filltexturewithsequence(
     const unsigned int width = (unsigned int) w;
     const unsigned int height = (unsigned int) h;
 
-    int pitch = width * 3; /* TODO: adapt to pixelformat */
+    int pitch = width * format->BytesPerPixel;
     void * tmp;
 
     SDL_LockTexture(texture, NULL, &tmp, &pitch);
