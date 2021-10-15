@@ -7,6 +7,7 @@
 #include <SDL2/SDL.h>
 
 #include "sequence.h"
+#include "textures.h"
 
 #define INITIAL_WIDTH 1280
 #define INITIAL_HEIGHT 720
@@ -91,27 +92,7 @@ int main(void) {
         return EXIT_FAILURE; /* TODO: UNIX exit codes */
     }
 
-    int pitch = width * 3;
-    void * tmp;
-
-    SDL_LockTexture(texture, NULL, &tmp, &pitch);
-    Uint32 * pixels = tmp;
-
-    for (size_t y = 0; y < height; y++) 
-        for (size_t x = 0; x < width; x++) {
-            mpz_t num;
-            mpz_init_set(num, sequence->numbers[x]);
-            const mp_bitcnt_t bitindex = height - y - 1;
-            const unsigned int ison = mpz_tstbit(num, bitindex);
-
-            const Uint8 r = ison * 255;
-            const Uint8 g = ison * 255;
-            const Uint8 b = ison * 255;
-
-            pixels[y * width + x] = SDL_MapRGB(format, r, g, b);
-        }
-
-    SDL_UnlockTexture(texture);
+    filltexturewithsequence(texture, format, sequence, 2);
 
     int winwidth;
     int winheight;
