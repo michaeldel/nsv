@@ -4,6 +4,7 @@ use std::io::{self, BufRead};
 use graphics::Transformed;
 use num_bigint::BigUint;
 use opengl_graphics::{Filter, OpenGL, GlGraphics, Texture, TextureSettings};
+use piston::TextEvent;
 use piston::event_loop::{Events, EventLoop, EventSettings};
 use piston::input::RenderEvent;
 use piston::window::WindowSettings;
@@ -50,8 +51,21 @@ fn main() {
     ).unwrap();
 
     let zoom = 1.0;
+    
+    let mut xoffset: usize = 0;
+    let mut yoffset: usize = 0;
 
     while let Some(e) = events.next(&mut window) {
+        if let Some(args) = e.text_args() {
+            match args.as_str() {
+                "h" => xoffset = if xoffset > 0 { xoffset - 1 } else { 0 },
+                "j" => yoffset = if yoffset > 0 { yoffset - 1 } else { 0 },
+                "k" => yoffset = if yoffset < height - 1 { yoffset + 1 } else { 0 },
+                "l" => xoffset = if xoffset < width - 1 { xoffset + 1 } else { 0 },
+                _ => ()
+            }
+        }
+
         if let Some(args) = e.render_args() {
             gl.draw(args.viewport(), |c, g| {
                 graphics::clear([0.0; 4], g);
@@ -61,19 +75,22 @@ fn main() {
 
                 let zoomed = c.transform.zoom(zoom);
 
+                let src = [
+                    xoffset as f64,
+                    cmp::max(0, height as isize - vph as isize - yoffset as isize) as f64,
+                    cmp::min(width, vpw) as f64,
+                    cmp::min(height, vph) as f64,
+                ];
+                let dest = [
+                    0.0,
+                    cmp::max(0, vph as isize - height as isize) as f64,
+                    src[2],
+                    src[3]
+                ];
+
                 graphics::Image::new()
-                    .src_rect([
-                        0.0,
-                        cmp::max(0, height as isize - vph as isize) as f64,
-                        vpw as f64,
-                        cmp::min(height, vph) as f64,
-                    ])
-                    .rect([
-                        0.0,
-                        cmp::max(0, vph as isize - height as isize) as f64,
-                        vpw as f64,
-                        cmp::min(height, vph) as f64
-                    ])
+                    .src_rect(src)
+                    .rect(dest)
                     .draw(
                         &texture, &graphics::draw_state::DrawState::default(), zoomed, g
                     );
