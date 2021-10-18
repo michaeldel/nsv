@@ -3,6 +3,8 @@ extern crate glutin_window;
 extern crate graphics;
 extern crate opengl_graphics;
 
+use std::io::{self, BufRead};
+
 use graphics::Transformed;
 use glutin_window::GlutinWindow;
 use opengl_graphics::{Filter, OpenGL, GlGraphics, Texture, TextureSettings};
@@ -21,7 +23,12 @@ fn main() {
     let mut window: GlutinWindow = settings.build()
         .expect("Could not create window");
 
-    let sequence = 0..1024;
+    let sequence: Vec<u32> = io::stdin().lock()
+        .lines()
+        .map(|l| l.unwrap())
+        .flat_map(|l| l.split_whitespace().map(|w| w.to_string()).collect::<Vec<_>>())
+        .map(|w| w.parse::<u32>().unwrap())
+        .collect();
 
     let mut events = Events::new(EventSettings::new().lazy(true));
     let mut gl = GlGraphics::new(opengl);
@@ -30,7 +37,7 @@ fn main() {
     let height = 32;
     let mut buf = vec![0; width * height];
 
-    for (x, number) in sequence.enumerate() {
+    for (x, number) in sequence.iter().enumerate() {
         for y in 0..height {
             let ison = (number >> (height - y - 1) & 1) as u8;
             buf[x + width * y] = ison * 255;
