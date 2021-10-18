@@ -7,6 +7,7 @@ use std::io::{self, BufRead};
 
 use graphics::Transformed;
 use glutin_window::GlutinWindow;
+use num_bigint::BigUint;
 use opengl_graphics::{Filter, OpenGL, GlGraphics, Texture, TextureSettings};
 use piston::event_loop::{Events, EventLoop, EventSettings};
 use piston::input::RenderEvent;
@@ -23,23 +24,24 @@ fn main() {
     let mut window: GlutinWindow = settings.build()
         .expect("Could not create window");
 
-    let sequence: Vec<u32> = io::stdin().lock()
+    let sequence: Vec<BigUint> = io::stdin().lock()
         .lines()
         .map(|l| l.unwrap())
         .flat_map(|l| l.split_whitespace().map(|w| w.to_string()).collect::<Vec<_>>())
-        .map(|w| w.parse::<u32>().unwrap())
+        .map(|w| w.parse::<BigUint>().unwrap())
         .collect();
 
     let mut events = Events::new(EventSettings::new().lazy(true));
     let mut gl = GlGraphics::new(opengl);
 
     let width = sequence.len();
-    let height = 32;
+    let height = sequence.iter().map(|x| x.bits()).max().unwrap() as usize;
     let mut buf = vec![0; width * height];
 
     for (x, number) in sequence.iter().enumerate() {
         for y in 0..height {
-            let ison = (number >> (height - y - 1) & 1) as u8;
+            let bitindex = height - y - 1;
+            let ison = number.bit(bitindex as u64) as u8;
             buf[x + width * y] = ison * 255;
         }
     }
