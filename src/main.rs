@@ -1,12 +1,14 @@
+use std::cmp;
 use std::io::{self, BufRead};
 
-use glutin_window::GlutinWindow;
 use graphics::Transformed;
 use num_bigint::BigUint;
 use opengl_graphics::{Filter, OpenGL, GlGraphics, Texture, TextureSettings};
 use piston::event_loop::{Events, EventLoop, EventSettings};
 use piston::input::RenderEvent;
 use piston::window::WindowSettings;
+use piston_window::PistonWindow;
+use sdl2_window::Sdl2Window;
 
 const WINDOW_WIDTH: u32 = 640;
 const WINDOW_HEIGHT: u32 = 320;
@@ -16,7 +18,8 @@ fn main() {
     let settings = WindowSettings::new("nsv", [WINDOW_WIDTH, WINDOW_HEIGHT])
         .graphics_api(opengl)
         .exit_on_esc(true);
-    let mut window: GlutinWindow = settings.build()
+    // default glutin backend provides annoying dpi handling
+    let mut window: PistonWindow<Sdl2Window> = settings.build()
         .expect("Could not create window");
 
     let sequence: Vec<BigUint> = io::stdin().lock()
@@ -41,22 +44,39 @@ fn main() {
         }
     }
 
-    let image = graphics::Image::new().rect([0f64, 0f64, width as f64, height as f64]);
     let texture_settings = TextureSettings::new().filter(Filter::Nearest);
     let texture = Texture::from_memory_alpha(
         &buf, width as u32, height as u32, &texture_settings
     ).unwrap();
 
-    let zoom = 4.0;
+    let zoom = 1.0;
 
     while let Some(e) = events.next(&mut window) {
         if let Some(args) = e.render_args() {
             gl.draw(args.viewport(), |c, g| {
                 graphics::clear([0.0; 4], g);
+
+                let vpw = c.viewport.unwrap().window_size[0] as usize;
+                let vph = c.viewport.unwrap().window_size[1] as usize;
+
                 let zoomed = c.transform.zoom(zoom);
-                image.draw(
-                    &texture, &graphics::draw_state::DrawState::default(), zoomed, g
-                );
+
+                graphics::Image::new()
+                    .src_rect([
+                        0.0,
+                        cmp::max(0, height as isize - vph as isize) as f64,
+                        vpw as f64,
+                        cmp::min(height, vph) as f64,
+                    ])
+                    .rect([
+                        0.0,
+                        cmp::max(0, vph as isize - height as isize) as f64,
+                        vpw as f64,
+                        cmp::min(height, vph) as f64
+                    ])
+                    .draw(
+                        &texture, &graphics::draw_state::DrawState::default(), zoomed, g
+                    );
             });
         }
     }

@@ -11,4 +11,7 @@ num-bigint = "0.4.2"
 piston = "0.53.0"
 piston2d-graphics = "0.40.0"
 piston2d-opengl_graphics = "0.78.0"
-pistoncore-glutin_window = "0.69.0"
+piston_window = "0.120.0"
+pistoncore-sdl2_window = "0.67.0"
+
+[features]
