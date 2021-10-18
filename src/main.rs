@@ -1,12 +1,7 @@
-extern crate piston;
-extern crate glutin_window;
-extern crate graphics;
-extern crate opengl_graphics;
-
 use std::io::{self, BufRead};
 
-use graphics::Transformed;
 use glutin_window::GlutinWindow;
+use graphics::Transformed;
 use num_bigint::BigUint;
 use opengl_graphics::{Filter, OpenGL, GlGraphics, Texture, TextureSettings};
 use piston::event_loop::{Events, EventLoop, EventSettings};
