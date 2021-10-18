@@ -1,7 +1,5 @@
-use std::cmp;
 use std::io::{self, BufRead};
 
-use graphics::Transformed;
 use num_bigint::BigUint;
 use opengl_graphics::{Filter, OpenGL, GlGraphics, Texture, TextureSettings};
 use piston::TextEvent;
@@ -50,7 +48,7 @@ fn main() {
         &buf, width as u32, height as u32, &texture_settings
     ).unwrap();
 
-    let zoom = 1.0;
+    let mut zoom = 1.0;
     
     let mut xoffset: usize = 0;
     let mut yoffset: usize = 0;
@@ -62,6 +60,9 @@ fn main() {
                 "j" => yoffset = if yoffset > 0 { yoffset - 1 } else { 0 },
                 "k" => yoffset = if yoffset < height - 1 { yoffset + 1 } else { 0 },
                 "l" => xoffset = if xoffset < width - 1 { xoffset + 1 } else { 0 },
+
+                "-" => zoom = f64::max(1.0, zoom / 2.0),
+                "+" => zoom = f64::min(f64::MAX, zoom * 2.0),
                 _ => ()
             }
         }
@@ -73,26 +74,27 @@ fn main() {
                 let vpw = c.viewport.unwrap().window_size[0] as usize;
                 let vph = c.viewport.unwrap().window_size[1] as usize;
 
-                let zoomed = c.transform.zoom(zoom);
-
                 let src = [
                     xoffset as f64,
-                    cmp::max(0, height as isize - vph as isize - yoffset as isize) as f64,
-                    cmp::min(width, vpw) as f64,
-                    cmp::min(height, vph) as f64,
+                    f64::max(0.0, height as f64 - vph as f64 / zoom - yoffset as f64),
+                    f64::min(width as f64, vpw as f64 / zoom),
+                    f64::min(height as f64, vph as f64 / zoom),
                 ];
                 let dest = [
                     0.0,
-                    cmp::max(0, vph as isize - height as isize) as f64,
-                    src[2],
-                    src[3]
+                    f64::max(0.0, vph as f64 - src[3] * zoom),
+                    src[2] * zoom,
+                    src[3] * zoom,
                 ];
 
                 graphics::Image::new()
                     .src_rect(src)
                     .rect(dest)
                     .draw(
-                        &texture, &graphics::draw_state::DrawState::default(), zoomed, g
+                        &texture,
+                        &graphics::draw_state::DrawState::default(),
+                        c.transform,
+                        g
                     );
             });
         }
