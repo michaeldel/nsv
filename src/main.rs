@@ -64,6 +64,7 @@ fn main() {
 
                 "-" => zoom = f64::max(1.0 / 8.0, zoom / 2.0),
                 "+" => zoom = f64::min(f64::MAX, zoom * 2.0),
+                "=" => zoom = 1.0,
                 _ => ()
             }
         }
