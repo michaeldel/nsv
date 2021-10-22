@@ -1,8 +1,9 @@
 use std::io::{self, BufRead};
 
 use graphics::Transformed;
+use fontconfig::Fontconfig;
 use num_bigint::BigUint;
-use opengl_graphics::{Filter, OpenGL, GlGraphics, Texture, TextureSettings};
+use opengl_graphics::{Filter, GlyphCache, OpenGL, GlGraphics, Texture, TextureSettings};
 use piston::TextEvent;
 use piston::event_loop::{Events, EventLoop, EventSettings};
 use piston::input::RenderEvent;
@@ -13,6 +14,8 @@ use sdl2_window::Sdl2Window;
 const WINDOW_WIDTH: u32 = 640;
 const WINDOW_HEIGHT: u32 = 320;
 
+const FONT_SIZE: u32 = 12;
+
 fn main() {
     let opengl = OpenGL::V3_2;
     let settings = WindowSettings::new("nsv", [WINDOW_WIDTH, WINDOW_HEIGHT])
@@ -21,6 +24,10 @@ fn main() {
     // default glutin backend provides annoying dpi handling
     let mut window: PistonWindow<Sdl2Window> = settings.build()
         .expect("Could not create window");
+
+    let fc = Fontconfig::new().unwrap();
+    let font = fc.find("monospace", None).unwrap().path;
+    let mut glyphs = GlyphCache::new(font, (), TextureSettings::new()).unwrap();
 
     let sequence: Vec<BigUint> = io::stdin().lock()
         .lines()
@@ -90,6 +97,13 @@ fn main() {
                         transform,
                         g
                     );
+                graphics::text::Text::new_color([1.0, 1.0, 1.0, 1.0], FONT_SIZE).draw(
+                    format!("x: {}, y: {}", xoffset, yoffset).as_str(),
+                    &mut glyphs,
+                    &graphics::draw_state::DrawState::default(),
+                    c.transform.trans(4.0, 4.0 + FONT_SIZE as f64),
+                    g
+                );
             });
         }
     }
