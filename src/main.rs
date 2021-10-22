@@ -11,6 +11,7 @@ use piston::window::WindowSettings;
 use piston_window::PistonWindow;
 use sdl2_window::Sdl2Window;
 
+mod label;
 mod minimap;
 
 const WINDOW_WIDTH: u32 = 640;
@@ -104,11 +105,12 @@ fn main() {
                         transform,
                         g
                     );
-                graphics::text::Text::new_color([1.0, 1.0, 1.0, 1.0], FONT_SIZE).draw(
+                label::label(
                     format!("x: {}, y: {}", xoffset, yoffset).as_str(),
                     &mut glyphs,
+                    FONT_SIZE,
                     &graphics::draw_state::DrawState::default(),
-                    c.transform.trans(4.0, 4.0 + FONT_SIZE as f64),
+                    c.transform,
                     g
                 );
 
@@ -120,6 +122,15 @@ fn main() {
                     c.transform
                        .trans(0.0, vph as f64 - MINIMAP_HEIGHT as f64)
                        .scale(minimap_width as f64, minimap_height as f64),
+                    g
+                );
+                label::label(
+                    "minimap",
+                    &mut glyphs,
+                    FONT_SIZE,
+                    &graphics::draw_state::DrawState::default(),
+                    c.transform
+                        .trans(0.0, vph as f64 - MINIMAP_HEIGHT as f64),
                     g
                 );
             });
