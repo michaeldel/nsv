@@ -11,10 +11,14 @@ use piston::window::WindowSettings;
 use piston_window::PistonWindow;
 use sdl2_window::Sdl2Window;
 
+mod minimap;
+
 const WINDOW_WIDTH: u32 = 640;
 const WINDOW_HEIGHT: u32 = 320;
 
 const FONT_SIZE: u32 = 12;
+
+const MINIMAP_HEIGHT: u32 = 64;
 
 fn main() {
     let opengl = OpenGL::V3_2;
@@ -80,10 +84,13 @@ fn main() {
             gl.draw(args.viewport(), |c, g| {
                 graphics::clear([0.0; 4], g);
 
+                let vpw = c.viewport.unwrap().window_size[0] as usize;
                 let vph = c.viewport.unwrap().window_size[1] as usize;
 
+                let main_height = vph - MINIMAP_HEIGHT as usize;
+
                 let x = -1.0 * xoffset as f64;
-                let y = -1.0 * (zoom * height as f64 - vph as f64 - yoffset as f64);
+                let y = -1.0 * (zoom * height as f64 - main_height as f64 - yoffset as f64);
 
                 let transform = c.transform
                     .trans(x, y)
@@ -102,6 +109,17 @@ fn main() {
                     &mut glyphs,
                     &graphics::draw_state::DrawState::default(),
                     c.transform.trans(4.0, 4.0 + FONT_SIZE as f64),
+                    g
+                );
+
+                let minimap_width = vpw;
+                let minimap_height = MINIMAP_HEIGHT;
+
+                minimap::Minimap::new(&sequence).draw(
+                    &graphics::draw_state::DrawState::default(),
+                    c.transform
+                       .trans(0.0, vph as f64 - MINIMAP_HEIGHT as f64)
+                       .scale(minimap_width as f64, minimap_height as f64),
                     g
                 );
             });
