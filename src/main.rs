@@ -89,9 +89,10 @@ fn main() {
                 let vph = c.viewport.unwrap().window_size[1] as usize;
 
                 let main_height = vph - MINIMAP_HEIGHT as usize;
+                let adj_main_height = main_height as f64 / zoom;
 
-                let x = -1.0 * xoffset as f64;
-                let y = -1.0 * (zoom * height as f64 - main_height as f64 - yoffset as f64);
+                let x = -1.0 * zoom * xoffset as f64;
+                let y = -1.0 * zoom * (height as f64 - adj_main_height - yoffset as f64);
 
                 let transform = c.transform
                     .trans(x, y)
