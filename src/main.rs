@@ -109,7 +109,7 @@ fn main() {
                         g
                     );
                 label::label(
-                    format!("x: {}, y: {}", xoffset, yoffset).as_str(),
+                    format!("x: {}, y: {}, zoom: {}", xoffset, yoffset, zoom).as_str(),
                     &mut glyphs,
                     FONT_SIZE,
                     main_draw_state,
