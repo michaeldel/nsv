@@ -121,7 +121,9 @@ fn main() {
                 let minimap_width = vpw;
                 let minimap_height = MINIMAP_HEIGHT;
 
-                minimap::Minimap::new(&sequence).draw(
+                let visible_width = (vpw as f64 / zoom).ceil() as usize;
+
+                minimap::Minimap::new(&sequence, xoffset, visible_width).draw(
                     &graphics::draw_state::DrawState::default(),
                     c.transform
                        .trans(0.0, vph as f64 - MINIMAP_HEIGHT as f64)

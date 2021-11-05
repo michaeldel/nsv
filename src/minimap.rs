@@ -2,12 +2,14 @@ use num_bigint::BigUint;
 use piston_window::{Graphics, Transformed};
 
 pub struct Minimap<'a> {
-    sequence: &'a Vec<BigUint>
+    sequence: &'a Vec<BigUint>,
+    xoffset: usize,
+    visible_width: usize,
 }
 
 impl<'a> Minimap<'a> {
-    pub fn new(sequence: &'a Vec<BigUint>) -> Self {
-        Self { sequence }
+    pub fn new(sequence: &'a Vec<BigUint>, xoffset: usize, visible_width: usize) -> Self {
+        Self { sequence, xoffset, visible_width }
     }
 }
 
@@ -37,5 +39,16 @@ impl Minimap<'_> {
                 g
             );
         }
+
+        let transparent = [1.0, 1.0, 1.0, 0.25];
+        graphics::Rectangle::new(transparent).draw(
+            [
+                self.xoffset as f64 / self.sequence.len() as f64, 0.0,
+                self.visible_width as f64 / self.sequence.len() as f64, 1.0
+            ],
+            draw_state,
+            transform,
+            g
+        );
     }
 }
