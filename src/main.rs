@@ -97,11 +97,14 @@ fn main() {
                     .trans(x, y)
                     .zoom(zoom);
 
+                let main_draw_state = &graphics::draw_state::DrawState::default()
+                    .scissor([0, 0, vpw as u32, vph as u32 - MINIMAP_HEIGHT]);
+
                 graphics::Image::new()
                     .rect([0.0, 0.0, width as f64, height as f64])
                     .draw(
                         &texture,
-                        &graphics::draw_state::DrawState::default(),
+                        main_draw_state,
                         transform,
                         g
                     );
@@ -109,7 +112,7 @@ fn main() {
                     format!("x: {}, y: {}", xoffset, yoffset).as_str(),
                     &mut glyphs,
                     FONT_SIZE,
-                    &graphics::draw_state::DrawState::default(),
+                    main_draw_state,
                     c.transform,
                     g
                 );
