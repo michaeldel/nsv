@@ -4,7 +4,7 @@ use graphics::Transformed;
 use fontconfig::Fontconfig;
 use num_bigint::BigUint;
 use opengl_graphics::{Filter, GlyphCache, OpenGL, GlGraphics, Texture, TextureSettings};
-use piston::TextEvent;
+use piston::{MouseCursorEvent, TextEvent};
 use piston::event_loop::{Events, EventLoop, EventSettings};
 use piston::input::RenderEvent;
 use piston::window::WindowSettings;
@@ -65,6 +65,7 @@ fn main() {
     
     let mut xoffset: usize = 0;
     let mut yoffset: usize = 0;
+    let mut cursor: [f64; 2] = [0.0, 0.0];
 
     while let Some(e) = events.next(&mut window) {
         if let Some(args) = e.text_args() {
@@ -79,6 +80,8 @@ fn main() {
                 "=" => zoom = 1.0,
                 _ => ()
             }
+        } else if let Some(args) = e.mouse_cursor_args() {
+            cursor = args
         }
 
         if let Some(args) = e.render_args() {
@@ -109,8 +112,17 @@ fn main() {
                         transform,
                         g
                     );
+
+                let xcursor = xoffset + (cursor[0] / zoom) as usize;
+                let ycursor = yoffset + (
+                    adj_main_height - f64::min(adj_main_height, cursor[1] / zoom)
+                ) as usize;
+
                 label::label(
-                    format!("x: {}, y: {}, zoom: {}", xoffset, yoffset, zoom).as_str(),
+                    format!(
+                        "offset: ({}, {}), cursor: ({}, {}), zoom: {}",
+                        xoffset, yoffset, xcursor, ycursor, zoom
+                    ).as_str(),
                     &mut glyphs,
                     FONT_SIZE,
                     main_draw_state,
